@@ -33,7 +33,6 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.progressLog1 = new NAudio.Utils.ProgressLog();
-            this.checkBoxFilterAutoSensing = new System.Windows.Forms.CheckBox();
             this.buttonMonitor = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -77,49 +76,37 @@
             // progressLog1
             // 
             this.progressLog1.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.progressLog1.Location = new System.Drawing.Point(375, 69);
+            this.progressLog1.Location = new System.Drawing.Point(249, 12);
             this.progressLog1.Name = "progressLog1";
             this.progressLog1.Padding = new System.Windows.Forms.Padding(1);
-            this.progressLog1.Size = new System.Drawing.Size(313, 131);
+            this.progressLog1.Size = new System.Drawing.Size(539, 426);
             this.progressLog1.TabIndex = 4;
-            // 
-            // checkBoxFilterAutoSensing
-            // 
-            this.checkBoxFilterAutoSensing.AutoSize = true;
-            this.checkBoxFilterAutoSensing.Location = new System.Drawing.Point(375, 256);
-            this.checkBoxFilterAutoSensing.Name = "checkBoxFilterAutoSensing";
-            this.checkBoxFilterAutoSensing.Size = new System.Drawing.Size(80, 17);
-            this.checkBoxFilterAutoSensing.TabIndex = 5;
-            this.checkBoxFilterAutoSensing.Text = "checkBox1";
-            this.checkBoxFilterAutoSensing.UseVisualStyleBackColor = true;
             // 
             // buttonMonitor
             // 
-            this.buttonMonitor.Location = new System.Drawing.Point(375, 302);
+            this.buttonMonitor.Location = new System.Drawing.Point(99, 97);
             this.buttonMonitor.Name = "buttonMonitor";
             this.buttonMonitor.Size = new System.Drawing.Size(75, 23);
             this.buttonMonitor.TabIndex = 6;
-            this.buttonMonitor.Text = "button1";
+            this.buttonMonitor.Text = "Start";
             this.buttonMonitor.UseVisualStyleBackColor = true;
             this.buttonMonitor.Click += new System.EventHandler(this.buttonMonitor_Click);
             // 
-            // Form1
+            // VoiceTouch
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.buttonMonitor);
-            this.Controls.Add(this.checkBoxFilterAutoSensing);
             this.Controls.Add(this.progressLog1);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.comboBoxMidiOutDevices);
             this.Controls.Add(this.comboBoxMidiInDevices);
             this.Name = "VoiceTouch";
-            this.Text = "Form1";
+            this.Text = "VoiceTouch";
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
         #endregion
@@ -129,7 +116,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private NAudio.Utils.ProgressLog progressLog1;
-        private System.Windows.Forms.CheckBox checkBoxFilterAutoSensing;
         private System.Windows.Forms.Button buttonMonitor;
     }
 }

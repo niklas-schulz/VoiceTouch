@@ -74,7 +74,6 @@ namespace VoiceTouch
             midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
             midiIn.Start();
             monitoring = true;
-            buttonMonitor.Text = "Stop";
             comboBoxMidiInDevices.Enabled = false;
             
             var parameters = new Voicemeeter.Parameters();
@@ -107,10 +106,6 @@ namespace VoiceTouch
 
         void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            if (checkBoxFilterAutoSensing.Checked && e.MidiEvent != null && e.MidiEvent.CommandCode == MidiCommandCode.AutoSensing)
-            {
-                return;
-            }
             MidiEvent me = MidiEvent.FromRawMessage(e.RawMessage);
             InputHandler(me);
         }
@@ -195,7 +190,6 @@ namespace VoiceTouch
         }
         void noteOnHandler(Note n)
         {
-            progressLog1.LogMessage(Color.Green, String.Format("Note {0} Velocity {1}", n.note, n.vel));
             if (n.note <= 7) // Reset fader
             {
                 if (mode == 0)
@@ -317,7 +311,6 @@ namespace VoiceTouch
             for (int i = 0; i < 8; i++)
             {
                 float f = GetParam(type +"[" + i + "]" + ".Gain");
-                progressLog1.LogMessage(Color.Green, String.Format("Fader {0} Value {1}", i, f));
                 int f1 = Convert.ToInt16((f + 60.0f) * 16380.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 midiOut.Send(fader.GetAsShortMessage());
