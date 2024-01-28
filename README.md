@@ -10,7 +10,7 @@ Use Inputs and Buses buttons to switch what you are controlling, the record butt
 
 Any questions? write to me on discord: "viwas"
 
-![Image](https://raw.githubusercontent.com/niklas-schulz/VoiceTouch/main/Img1.jpg)
+![Image](https://github.com/niklas-schulz/VoiceTouch/blob/main/Img1.jpg?raw=true)
 ## Acknowledgements
 
  - [VoicemeeterRemote](https://github.com/bobhelander/VoicemeeterRemote)
