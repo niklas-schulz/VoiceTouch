@@ -10,24 +10,10 @@ using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
-
-
+using static VoiceTouch.Utils;
 
 namespace VoiceTouch
 {
-    static class Colors
-    {
-        public const byte Black = 0x00;
-        public const byte Red = 0x01;
-        public const byte Green = 0x02;
-        public const byte Yellow = 0x03;
-        public const byte Blue = 0x04;
-        public const byte Pink = 0x05;
-        public const byte Cyan = 0x06;
-        public const byte White = 0x07;
-    }
-    
     public partial class Form1 : Form
     {
         MidiIn midiIn;
@@ -35,18 +21,7 @@ namespace VoiceTouch
         bool monitoring;
         List<MidiEvent> events;
         int midiOutIndex;
-        
-        struct PitchBend
-        {
-            public int channel;
-            public int pitch;
-        }
-        struct Note
-        {
-            public int note;
-            public int vel;
-        }
-        
+
         bool[] busMute = new bool[8];
 
         private int mode = 0;
@@ -166,18 +141,6 @@ namespace VoiceTouch
                 noteOnHandler(n);
             }
         }
-        
-        void SetParam(string n, float v)
-        {
-            VoiceMeeter.Remote.SetParameter(n, v);
-        }
-        
-        float GetParam(string n)
-        {
-            float output = -1;
-            output = VoiceMeeter.Remote.GetParameter(n);
-            return output;
-        }
 
         void SetDisplayText(string message, int row)
         {
@@ -258,15 +221,12 @@ namespace VoiceTouch
                 if (f == 1f)
                 {
                     busMute[i] = true;
-                    displayColors[i] = Colors.Red;
                 }
                 else
                 {
                     busMute[i] = false;
-                    displayColors[i] = Colors.Green;
                 }
             }
-            //SetDisplayColor(displayColors);
         }
 
         void UpdateMuteButtons()
