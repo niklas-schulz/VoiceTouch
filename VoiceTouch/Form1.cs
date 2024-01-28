@@ -2,11 +2,7 @@
 using NAudio.Utils;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -114,10 +110,10 @@ namespace VoiceTouch
                 return;
             }
             MidiEvent me = MidiEvent.FromRawMessage(e.RawMessage);
-            inputHandler(me);
+            InputHandler(me);
         }
 
-        void inputHandler(MidiEvent midiEvent)
+        void InputHandler(MidiEvent midiEvent)
         {
             // Get pitch bend value from midiEvent
             if (midiEvent.CommandCode == MidiCommandCode.PitchWheelChange)
@@ -127,7 +123,7 @@ namespace VoiceTouch
                 PitchBend pb;
                 pb.channel = pitchBend.Channel;
                 pb.pitch = pitchBendValue;
-                fader(pb);
+                Fader(pb);
             } // Get note on value from midiEvent
             else if (midiEvent.CommandCode == MidiCommandCode.NoteOn)
             {
@@ -145,19 +141,13 @@ namespace VoiceTouch
         void SetDisplayText(string message, int row)
         {
             byte lastMsgLen = 0x37;
-            // Set the text on the xtouch display via midi
-            // Convert the string to a byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(message);
-            // Copy the message bytes into the sysex array
             byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x12, 0x00 };
             
-            // Last message length + 1 multiplied by row
             sysex[6] = (byte)((lastMsgLen + 1) * row);
             
             midiOut.SendBuffer(sysex);
-            // Send the message bytes
             midiOut.SendBuffer(messageBytes);
-            // Send the sysex end
             midiOut.SendBuffer(new byte[] { 0xF7 });
 
         }
@@ -172,17 +162,15 @@ namespace VoiceTouch
         
         void DisplayTexts(string[] messages, int row)
         {
-            // Add all the messages into a single string where each message is 7 characters long
             string message = "";
             foreach (string m in messages)
             {
                 message += m.PadRight(7);
             }
-            // Set the text on the xtouch display via setDisplayText
             SetDisplayText(message, row);
         }
 
-        void fader(PitchBend pb)
+        void Fader(PitchBend pb)
         {
             if (pb.channel > 8)
                 return;
@@ -265,11 +253,6 @@ namespace VoiceTouch
                 sysex = new byte[]{ 0xF0, 0x00, 0x00, 0x66, 0x14, 0x20, (byte)(i + 1), 3, 0xF7 };
             }
         }
-        
-        public static float Clamp(float value, float min, float max)  
-        {  
-            return (value < min) ? min : (value > max) ? max : value;  
-        }
 
         void SetMeters()
         {
@@ -301,12 +284,6 @@ namespace VoiceTouch
         private void buttonMonitor_Click(object sender, EventArgs e)
         {
             StartMonitoring();
-        }
-        
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-                midiIn.Dispose();
-                midiOut.Dispose();
         }
     }
 }
