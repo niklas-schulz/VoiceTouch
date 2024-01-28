@@ -55,6 +55,8 @@ namespace VoiceTouch
         private const int CHANNEL_INPUT_OFFSET = 2;
         private const int CHANNEL_OUTPUT_OFFSET = 8;
 
+        private byte[] displayColors = new byte[] {Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Green, Colors.Green, Colors.Green};
+
         public Form1()
         {
             InitializeComponent();
@@ -107,7 +109,7 @@ namespace VoiceTouch
             var subscription = parameters.Subscribe(x => Sync());
                 
             SetDisplayText("123456789", 0);
-            SetDisplayColor(new byte[] { Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Green, Colors.Green,Colors.Green });
+            SetDisplayColor(displayColors);
             DisplayTexts(new string[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
             DisplayTexts(new string[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
             UpdateMuteButtons();
@@ -119,7 +121,7 @@ namespace VoiceTouch
         {
             while (true)
             {
-                await Task.Delay(10);
+                await Task.Delay(50);
                 SetMeters();
             }
         }
@@ -254,10 +256,17 @@ namespace VoiceTouch
                 string s = "Bus[" + i + "]";
                 float f = GetParam(s + ".Mute");
                 if (f == 1f)
+                {
                     busMute[i] = true;
+                    displayColors[i] = Colors.Red;
+                }
                 else
+                {
                     busMute[i] = false;
+                    displayColors[i] = Colors.Green;
+                }
             }
+            //SetDisplayColor(displayColors);
         }
 
         void UpdateMuteButtons()
