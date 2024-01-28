@@ -19,6 +19,7 @@ namespace VoiceTouch
         int midiOutIndex;
 
         bool[] busMute = new bool[8];
+        bool[] stripMute = new bool[8];
 
         private int mode = 0;
 
@@ -26,7 +27,7 @@ namespace VoiceTouch
         private const int CHANNEL_INPUT_OFFSET = 2;
         private const int CHANNEL_OUTPUT_OFFSET = 8;
 
-        private byte[] displayColors = new byte[] {Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Blue, Colors.Green, Colors.Green, Colors.Green};
+        private byte[] displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
 
         public Form1()
         {
@@ -81,11 +82,12 @@ namespace VoiceTouch
                 
             SetDisplayText("123456789", 0);
             SetDisplayColor(displayColors);
-            DisplayTexts(new string[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
-            DisplayTexts(new string[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
             UpdateMuteButtons();
             EnableMeeters();
             Meters();
+            ButtonLight(63, true);
+            ButtonLight(67, false);
+            ChangeMode();
         }
         
         async void Meters()
@@ -174,8 +176,18 @@ namespace VoiceTouch
         {
             if (pb.channel > 8)
                 return;
+            
+            string type = null;
+            if (mode == 0)
+            {
+                type = "Strip";
+            }
+            else if (mode == 1)
+            {
+                type = "Bus";
+            }
 
-            string bus = "Bus[" + (pb.channel-1) + "]";
+            string bus = type +"["+ (pb.channel-1) + "]";
             float f = (pb.pitch/16380.0f*72.0f)-60.0f;
             SetParam(bus + ".Gain", f);
 
@@ -183,36 +195,85 @@ namespace VoiceTouch
         }
         void noteOnHandler(Note n)
         {
-
-            // Reset fader depending on note
-            if (n.note <= 7)
+            progressLog1.LogMessage(Color.Green, String.Format("Note {0} Velocity {1}", n.note, n.vel));
+            if (n.note <= 7) // Reset fader
             {
-                string bus = "Bus[" + n.note + "]";
-                SetParam(bus + ".Gain", 0f);
+                if (mode == 0)
+                {
+                    string strip = "Strip[" + n.note + "]";
+                    SetParam(strip + ".Gain", 0f);
+                }
+                else if (mode == 1)
+                {
+                    string bus = "Bus[" + n.note + "]";
+                    SetParam(bus + ".Gain", 0f);
+                }
             }
-            else if (n.note >= 16 && n.note <= 23)
+            else if (n.note >= 16 && n.note <= 23) // Mute buttons
             {
                 UpdateMute();
-                string bus = "Bus[" + (n.note - 16) + "]";
-                SetParam(bus + ".Mute", busMute[n.note - 16] ? 0f : 1f);
+                if (mode == 0)
+                {
+                    string strip = "Strip[" + (n.note - 16) + "]";
+                    SetParam(strip + ".Mute", stripMute[n.note - 16] ? 0f : 1f);
+                }
+                else if (mode == 1)
+                {
+                    string bus = "Bus[" + (n.note - 16) + "]";
+                    SetParam(bus + ".Mute", busMute[n.note - 16] ? 0f : 1f);
+                }
                 VoiceMeeter.Remote.IsParametersDirty();
+            }
+            else if (n.note == 63) // Input view mode
+            {
+                mode = 0;
+                ButtonLight(63, true);
+                ButtonLight(67, false);
+                ChangeMode();
+            }
+            else if (n.note == 67) // Bus view mode
+            {
+                mode = 1;
+                ButtonLight(67, true);
+                ButtonLight(63, false);
+                ChangeMode();
             }
         }
 
         void UpdateMute()
         {
             VoiceMeeter.Remote.IsParametersDirty();
-            for (int i = 0; i < 8; i++)
+
+            if (mode == 0)
             {
-                string s = "Bus[" + i + "]";
-                float f = GetParam(s + ".Mute");
-                if (f == 1f)
+                for (int i = 0; i < 8; i++)
                 {
-                    busMute[i] = true;
+                    string s = "Strip[" + i + "]";
+                    float f = GetParam(s + ".Mute");
+                    if (f == 1f)
+                    {
+                        stripMute[i] = true;
+                    }
+                    else
+                    {
+                        stripMute[i] = false;
+                    }
                 }
-                else
+            }
+            else if (mode == 1)
+            {
+                for (int i = 0; i < 8; i++)
                 {
-                    busMute[i] = false;
+                    string s = "Bus[" + i + "]";
+                    float f = GetParam(s + ".Mute");
+                    if (f == 1f)
+                    {
+                        busMute[i] = true;
+                    }
+                    else
+                    {
+                        busMute[i] = false;
+                    }
                 }
             }
         }
@@ -220,10 +281,19 @@ namespace VoiceTouch
         void UpdateMuteButtons()
         {
             UpdateMute();
-            for (int i = 0; i < 8; i++)
+            if (mode == 0)
             {
-                MidiEvent buttonLight = new NoteEvent(0,1, MidiCommandCode.NoteOn,i+16, busMute[i] ? 127 : 0);
-                midiOut.Send(buttonLight.GetAsShortMessage());
+                for (int i = 0; i < 8; i++)
+                {
+                    ButtonLight(i+16, stripMute[i]);
+                }
+            }
+            else if (mode == 1)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    ButtonLight(i+16, busMute[i]);
+                }
             }
         }
         void Sync()
@@ -234,14 +304,25 @@ namespace VoiceTouch
         
         void SyncFader()
         {
+            string type = null;
+            if (mode == 0)
+            {
+                type = "Strip";
+            }
+            else if (mode == 1)
+            {
+                type = "Bus";
+            }
+
             for (int i = 0; i < 8; i++)
             {
-                string bus = "Bus[" + i + "]";
-                float f = GetParam(bus + ".Gain");
+                float f = GetParam(type +"[" + i + "]" + ".Gain");
+                progressLog1.LogMessage(Color.Green, String.Format("Fader {0} Value {1}", i, f));
                 int f1 = Convert.ToInt16((f + 60.0f) * 16380.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 midiOut.Send(fader.GetAsShortMessage());
             }
+            
         }
 
         void EnableMeeters()
@@ -262,6 +343,27 @@ namespace VoiceTouch
                 float level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, i*CHANNEL_OUTPUT_OFFSET) * 14 * levelScale + 0.4f, 0, 14);
                 MidiEvent meter = new ChannelAfterTouchEvent(0, 1, Convert.ToInt16(level) + i * 16);
                 midiOut.Send(meter.GetAsShortMessage());
+            }
+        }
+        
+        void ButtonLight(int button, bool on)
+        {
+            MidiEvent buttonLight = new NoteEvent(0,1, MidiCommandCode.NoteOn,button, on ? 127 : 0);
+            midiOut.Send(buttonLight.GetAsShortMessage());
+        }
+
+        void ChangeMode()
+        {
+            Sync();
+            if (mode == 0) // Input mode
+            {
+                DisplayTexts(new string[] {"INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT"}, 0);
+                DisplayTexts(new string[] {"1", "2", "3", "4", "5", "VINPUT", "AUX1", "VAIO3"}, 1);
+            }
+            else if (mode == 1) // Bus mode
+            {
+                DisplayTexts(new string[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
+                DisplayTexts(new string[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
             }
         }
         
