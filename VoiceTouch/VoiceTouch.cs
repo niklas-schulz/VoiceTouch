@@ -10,7 +10,7 @@ using static VoiceTouch.Utils;
 
 namespace VoiceTouch
 {
-    public partial class Form1 : Form
+    public partial class VoiceTouch : Form
     {
         MidiIn midiIn;
         MidiOut midiOut;
@@ -29,7 +29,7 @@ namespace VoiceTouch
 
         private byte[] displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
 
-        public Form1()
+        public VoiceTouch()
         {
             InitializeComponent();
 

@@ -1,6 +1,6 @@
 ﻿namespace VoiceTouch
 {
-    partial class Form1
+    partial class VoiceTouch
     {
         /// <summary>
         /// Required designer variable.
@@ -115,7 +115,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.comboBoxMidiOutDevices);
             this.Controls.Add(this.comboBoxMidiInDevices);
-            this.Name = "Form1";
+            this.Name = "VoiceTouch";
             this.Text = "Form1";
             this.ResumeLayout(false);
             this.PerformLayout();
