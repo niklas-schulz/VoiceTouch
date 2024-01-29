@@ -12,6 +12,9 @@ Use Inputs and Buses buttons to switch what you are controlling, the record butt
 
 Any questions? write to me on discord: "viwas"
 
+## Installation
+Goto [Releases](https://github.com/niklas-schulz/VoiceTouch/releases) and download the most recent one then extract and run VoiceTouch.exe
+
 ![Image](https://github.com/niklas-schulz/VoiceTouch/blob/main/Img1.jpg?raw=true)
 ## Acknowledgements
 
