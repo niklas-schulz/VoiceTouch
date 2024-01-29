@@ -1,7 +1,5 @@
 ﻿using NAudio.Midi;
-using NAudio.Utils;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,22 +10,20 @@ namespace VoiceTouch
 {
     public partial class VoiceTouch : Form
     {
-        MidiIn midiIn;
-        MidiOut midiOut;
-        bool monitoring;
-        List<MidiEvent> events;
-        int midiOutIndex;
+        MidiIn _midiIn;
+        MidiOut _midiOut;
 
-        bool[] busMute = new bool[8];
-        bool[] stripMute = new bool[8];
+        bool[] _busMute = new bool[8];
+        bool[] _stripMute = new bool[8];
 
-        private int mode = 0;
+        private int _mode;
 
-        private int levelScale = 1;
-        private const int CHANNEL_INPUT_OFFSET = 2;
-        private const int CHANNEL_OUTPUT_OFFSET = 8;
+        private const int LevelScale = 1;
+        private const int ChannelCount = 8; 
+        private const int ChannelInputOffset = 2;
+        private const int ChannelOutputOffset = 8;
 
-        private byte[] displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
+        private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
 
         public VoiceTouch()
         {
@@ -58,31 +54,30 @@ namespace VoiceTouch
                 MessageBox.Show("No MIDI input devices available");
                 return;
             }
-            if (midiIn != null)
+            if (_midiIn != null)
             {
-                midiIn.Dispose();
-                midiIn.MessageReceived -= midiIn_MessageReceived;
-                midiIn.ErrorReceived -= midiIn_ErrorReceived;
-                midiIn = null;
+                _midiIn.Dispose();
+                _midiIn.MessageReceived -= midiIn_MessageReceived;
+                _midiIn.ErrorReceived -= midiIn_ErrorReceived;
+                _midiIn = null;
             }
-            if (midiIn == null)
+            if (_midiIn == null)
             {
-                midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
-                midiIn.MessageReceived += midiIn_MessageReceived;
-                midiIn.ErrorReceived += midiIn_ErrorReceived;
+                _midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
+                _midiIn.MessageReceived += midiIn_MessageReceived;
+                _midiIn.ErrorReceived += midiIn_ErrorReceived;
             }
-            midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
-            midiIn.Start();
-            monitoring = true;
+            _midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
+            _midiIn.Start();
             comboBoxMidiInDevices.Enabled = false;
             
             var parameters = new Voicemeeter.Parameters();
-            var subscription = parameters.Subscribe(x => Sync());
+            parameters.Subscribe(x => Sync());
                 
             SetDisplayText("123456789", 0);
-            SetDisplayColor(displayColors);
+            SetDisplayColor(_displayColors);
             UpdateMuteButtons();
-            EnableMeeters();
+            //EnableMeeters();
             Meters();
             ButtonLight(63, true);
             ButtonLight(67, false);
@@ -143,18 +138,18 @@ namespace VoiceTouch
             
             sysex[6] = (byte)((lastMsgLen + 1) * row);
             
-            midiOut.SendBuffer(sysex);
-            midiOut.SendBuffer(messageBytes);
-            midiOut.SendBuffer(new byte[] { 0xF7 });
+            _midiOut.SendBuffer(sysex);
+            _midiOut.SendBuffer(messageBytes);
+            _midiOut.SendBuffer(new byte[] { 0xF7 });
 
         }
         
         void SetDisplayColor(byte[] color)
         {
             byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x72};
-            midiOut.SendBuffer(sysex);
-            midiOut.SendBuffer(color);
-            midiOut.SendBuffer(new byte[] { 0xF7 });
+            _midiOut.SendBuffer(sysex);
+            _midiOut.SendBuffer(color);
+            _midiOut.SendBuffer(new byte[] { 0xF7 });
         }
         
         void DisplayTexts(string[] messages, int row)
@@ -173,11 +168,11 @@ namespace VoiceTouch
                 return;
             
             string type = null;
-            if (mode == 0)
+            if (_mode == 0)
             {
                 type = "Strip";
             }
-            else if (mode == 1)
+            else if (_mode == 1)
             {
                 type = "Bus";
             }
@@ -192,12 +187,12 @@ namespace VoiceTouch
         {
             if (n.note <= 7) // Reset fader
             {
-                if (mode == 0)
+                if (_mode == 0)
                 {
                     string strip = "Strip[" + n.note + "]";
                     SetParam(strip + ".Gain", 0f);
                 }
-                else if (mode == 1)
+                else if (_mode == 1)
                 {
                     string bus = "Bus[" + n.note + "]";
                     SetParam(bus + ".Gain", 0f);
@@ -206,28 +201,28 @@ namespace VoiceTouch
             else if (n.note >= 16 && n.note <= 23) // Mute buttons
             {
                 UpdateMute();
-                if (mode == 0)
+                if (_mode == 0)
                 {
                     string strip = "Strip[" + (n.note - 16) + "]";
-                    SetParam(strip + ".Mute", stripMute[n.note - 16] ? 0f : 1f);
+                    SetParam(strip + ".Mute", _stripMute[n.note - 16] ? 0f : 1f);
                 }
-                else if (mode == 1)
+                else if (_mode == 1)
                 {
                     string bus = "Bus[" + (n.note - 16) + "]";
-                    SetParam(bus + ".Mute", busMute[n.note - 16] ? 0f : 1f);
+                    SetParam(bus + ".Mute", _busMute[n.note - 16] ? 0f : 1f);
                 }
                 VoiceMeeter.Remote.IsParametersDirty();
             }
             else if (n.note == 63) // Input view mode
             {
-                mode = 0;
+                _mode = 0;
                 ButtonLight(63, true);
                 ButtonLight(67, false);
                 ChangeMode();
             }
             else if (n.note == 67) // Bus view mode
             {
-                mode = 1;
+                _mode = 1;
                 ButtonLight(67, true);
                 ButtonLight(63, false);
                 ChangeMode();
@@ -238,35 +233,35 @@ namespace VoiceTouch
         {
             VoiceMeeter.Remote.IsParametersDirty();
 
-            if (mode == 0)
+            if (_mode == 0)
             {
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < ChannelCount; i++)
                 {
                     string s = "Strip[" + i + "]";
                     float f = GetParam(s + ".Mute");
                     if (f == 1f)
                     {
-                        stripMute[i] = true;
+                        _stripMute[i] = true;
                     }
                     else
                     {
-                        stripMute[i] = false;
+                        _stripMute[i] = false;
                     }
                 }
             }
-            else if (mode == 1)
+            else if (_mode == 1)
             {
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < ChannelCount; i++)
                 {
                     string s = "Bus[" + i + "]";
                     float f = GetParam(s + ".Mute");
                     if (f == 1f)
                     {
-                        busMute[i] = true;
+                        _busMute[i] = true;
                     }
                     else
                     {
-                        busMute[i] = false;
+                        _busMute[i] = false;
                     }
                 }
             }
@@ -275,18 +270,18 @@ namespace VoiceTouch
         void UpdateMuteButtons()
         {
             UpdateMute();
-            if (mode == 0)
+            if (_mode == 0)
             {
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < ChannelCount; i++)
                 {
-                    ButtonLight(i+16, stripMute[i]);
+                    ButtonLight(i+16, _stripMute[i]);
                 }
             }
-            else if (mode == 1)
+            else if (_mode == 1)
             {
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < ChannelCount; i++)
                 {
-                    ButtonLight(i+16, busMute[i]);
+                    ButtonLight(i+16, _busMute[i]);
                 }
             }
         }
@@ -299,64 +294,64 @@ namespace VoiceTouch
         void SyncFader()
         {
             string type = null;
-            if (mode == 0)
+            if (_mode == 0)
             {
                 type = "Strip";
             }
-            else if (mode == 1)
+            else if (_mode == 1)
             {
                 type = "Bus";
             }
 
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < ChannelCount; i++)
             {
                 float f = GetParam(type +"[" + i + "]" + ".Gain");
                 int f1 = Convert.ToInt16((f + 60.0f) * 16380.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
-                midiOut.Send(fader.GetAsShortMessage());
+                _midiOut.Send(fader.GetAsShortMessage());
             }
             
         }
-
+/*
         void EnableMeeters()
         {
             byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x21, 1, 0xF7 };
-            midiOut.SendBuffer(sysex);
-            for (int i = 0; i < 8; i++)
+            _midiOut.SendBuffer(sysex);
+            for (int i = 0; i < ChannelCount; i++)
             {
                 sysex = new byte[]{ 0xF0, 0x00, 0x00, 0x66, 0x14, 0x20, (byte)(i + 1), 3, 0xF7 };
             }
-        }
+        }*/
 
         void SetMeters()
         {
             // Set output meters
             for (int i = 0; i <= 7 ; i++)
             {
-                float level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, i*CHANNEL_OUTPUT_OFFSET) * 14 * levelScale + 0.4f, 0, 14);
+                float level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, i*ChannelOutputOffset) * 14 * LevelScale + 0.4f, 0, 14);
                 MidiEvent meter = new ChannelAfterTouchEvent(0, 1, Convert.ToInt16(level) + i * 16);
-                midiOut.Send(meter.GetAsShortMessage());
+                _midiOut.Send(meter.GetAsShortMessage());
             }
         }
         
         void ButtonLight(int button, bool on)
         {
             MidiEvent buttonLight = new NoteEvent(0,1, MidiCommandCode.NoteOn,button, on ? 127 : 0);
-            midiOut.Send(buttonLight.GetAsShortMessage());
+            _midiOut.Send(buttonLight.GetAsShortMessage());
         }
 
         void ChangeMode()
         {
             Sync();
-            if (mode == 0) // Input mode
+            if (_mode == 0) // Input mode
             {
-                DisplayTexts(new string[] {"INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT"}, 0);
-                DisplayTexts(new string[] {"1", "2", "3", "4", "5", "VINPUT", "AUX1", "VAIO3"}, 1);
+                DisplayTexts(new[] {"INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT"}, 0);
+                DisplayTexts(new[] {"1", "2", "3", "4", "5", "VINPUT", "AUX1", "VAIO3"}, 1);
             }
-            else if (mode == 1) // Bus mode
+            else if (_mode == 1) // Bus mode
             {
-                DisplayTexts(new string[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
-                DisplayTexts(new string[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
+                DisplayTexts(new[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
+                DisplayTexts(new[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
             }
         }
         
