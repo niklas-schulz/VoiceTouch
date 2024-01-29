@@ -43,19 +43,14 @@ namespace VoiceTouch
             comboBoxVirtualColor.SelectedIndex = 2;
 
             for (int device = 0; device < MidiIn.NumberOfDevices; device++)
-            {
                 comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
-            }
 
             if (comboBoxMidiInDevices.Items.Count > 0)
-            {
                 comboBoxMidiInDevices.SelectedIndex = 0;
-            }
+            
 
             for (int device = 0; device < MidiOut.NumberOfDevices; device++)
-            {
                 comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
-            }
 
             VoiceMeeter.Remote.Initialize(Voicemeeter.RunVoicemeeterParam.VoicemeeterPotato);
         }
