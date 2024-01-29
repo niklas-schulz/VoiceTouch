@@ -167,9 +167,8 @@ namespace VoiceTouch
         {
             string message = "";
             foreach (string m in messages)
-            {
                 message += m.PadRight(7);
-            }
+            
             SetDisplayText(message, row);
         }
 
@@ -241,10 +240,7 @@ namespace VoiceTouch
             UpdateMute();
 
             for (int i = 0; i < ChannelCount; i++)
-            {
                 ButtonLight(i+16, _mute[i + _mode * ChannelCount]);
-            }
-
         }
         void Sync()
         {
@@ -316,13 +312,11 @@ namespace VoiceTouch
         void UpdateColors()
         {
             for (int i = 0; i < 5; i++)
-            {
                 _displayColors[i] = (byte)comboBoxPhysicalColor.SelectedIndex;
-            }
+            
             for (int i = 5; i < 8; i++)
-            {
                 _displayColors[i] = (byte)comboBoxVirtualColor.SelectedIndex;
-            }
+            
             if (_monitoring) 
                 SetDisplayColor(_displayColors);
         }
