@@ -17,6 +17,8 @@ namespace VoiceTouch
 
         private int _mode;
         private string _modeString = "Strip";
+        
+        private bool _monitoring = true;
 
         private const int LevelScale = 1;
         private const int ChannelCount = 8; 
@@ -86,7 +88,7 @@ namespace VoiceTouch
         
         async void Meters()
         {
-            while (true)
+            while (_monitoring)
             {
                 await Task.Delay(50);
                 SetMeters();
@@ -255,10 +257,24 @@ namespace VoiceTouch
 
         void SetMeters()
         {
+            int multiChannelOffset = 0;
             // Set output meters
-            for (int i = 0; i <= 7 ; i++)
+            for (int i = 0; i < ChannelCount ; i++)
             {
-                float level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, i*ChannelOutputOffset) * 14 * LevelScale + 0.4f, 0, 14);
+                float level = 0;
+                if (_mode == 0)
+                {
+                    // This is due to the virtual inputs having six channels instead of two like on the physical inputs
+                    if (i == 6)
+                        multiChannelOffset = 6;
+                    else if (i > 6)
+                        multiChannelOffset = 12;
+                    
+                    level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.PostFaderInput, ChannelInputOffset * i + multiChannelOffset) * 14 * LevelScale + 0.4f, 0, 14);
+                }
+                else if (_mode == 1)
+                    level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, ChannelOutputOffset * i) * 14 * LevelScale + 0.4f, 0, 14);
+                
                 MidiEvent meter = new ChannelAfterTouchEvent(0, 1, Convert.ToInt16(level) + i * 16);
                 _midiOut.Send(meter.GetAsShortMessage());
             }
