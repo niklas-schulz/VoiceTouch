@@ -13,7 +13,7 @@
     }
     
 
-    static class Colors
+    public struct Colors
     {
         public const byte Black = 0x00;
         public const byte Red = 0x01;

@@ -29,10 +29,18 @@ namespace VoiceTouch
         private const int ButtonInputs = 63;
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
-
+        
         public VoiceTouch()
         {
             InitializeComponent();
+
+            foreach (var field in typeof(Colors).GetFields())
+            {
+                comboBoxPhysicalColor.Items.Add(field.Name);
+                comboBoxVirtualColor.Items.Add(field.Name);
+            }
+            comboBoxPhysicalColor.SelectedIndex = 6;
+            comboBoxVirtualColor.SelectedIndex = 2;
 
             for (int device = 0; device < MidiIn.NumberOfDevices; device++)
             {
@@ -74,11 +82,17 @@ namespace VoiceTouch
             _midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
             _midiIn.Start();
             comboBoxMidiInDevices.Enabled = false;
+            comboBoxMidiOutDevices.Enabled = false;
+
+            _monitoring = true;
             
             var parameters = new Voicemeeter.Parameters();
             parameters.Subscribe(x => Sync());
             
-            SetDisplayColor(_displayColors);
+            comboBoxPhysicalColor.Enabled = false;
+            comboBoxVirtualColor.Enabled = false;
+            
+            UpdateColors();
             UpdateMuteButtons();
             Meters();
             ButtonLight(ButtonInputs, true);
@@ -270,7 +284,7 @@ namespace VoiceTouch
                     else if (i > 6)
                         multiChannelOffset = 12;
                     
-                    level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.PostFaderInput, ChannelInputOffset * i + multiChannelOffset) * 14 * LevelScale + 0.4f, 0, 14);
+                    level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.PostFaderInput, ChannelInputOffset * i + multiChannelOffset) * 14 * LevelScale + 0.2f, 0, 14);
                 }
                 else if (_mode == 1)
                     level =  Clamp(VoiceMeeter.Remote.GetLevel(Voicemeeter.LevelType.Output, ChannelOutputOffset * i) * 14 * LevelScale + 0.4f, 0, 14);
@@ -303,6 +317,20 @@ namespace VoiceTouch
             }
             Sync();
         }
+
+        void UpdateColors()
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                _displayColors[i] = (byte)comboBoxPhysicalColor.SelectedIndex;
+            }
+            for (int i = 5; i < 8; i++)
+            {
+                _displayColors[i] = (byte)comboBoxVirtualColor.SelectedIndex;
+            }
+            if (_monitoring) 
+                SetDisplayColor(_displayColors);
+        }
         
 
         private void comboBoxMidiInDevices_SelectedIndexChanged(object sender, EventArgs e)
@@ -324,5 +352,6 @@ namespace VoiceTouch
         {
             StartMonitoring();
         }
+
     }
 }
