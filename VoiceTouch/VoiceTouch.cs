@@ -12,16 +12,19 @@ namespace VoiceTouch
     {
         private MidiIn _midiIn;
         private MidiOut _midiOut;
-
-        bool[] _busMute = new bool[8];
-        bool[] _stripMute = new bool[8];
+        
+        bool[] _mute = new bool[16];
 
         private int _mode;
+        private string _modeString = "Strip";
 
         private const int LevelScale = 1;
         private const int ChannelCount = 8; 
         private const int ChannelInputOffset = 2;
         private const int ChannelOutputOffset = 8;
+
+        private const int ButtonBuses = 67;
+        private const int ButtonInputs = 63;
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
 
@@ -76,8 +79,8 @@ namespace VoiceTouch
             SetDisplayColor(_displayColors);
             UpdateMuteButtons();
             Meters();
-            ButtonLight(63, true);
-            ButtonLight(67, false);
+            ButtonLight(ButtonInputs, true);
+            ButtonLight(ButtonBuses, false);
             ChangeMode();
         }
         
@@ -163,18 +166,8 @@ namespace VoiceTouch
         {
             if (pb.channel > 8)
                 return;
-            
-            string type = null;
-            if (_mode == 0)
-            {
-                type = "Strip";
-            }
-            else if (_mode == 1)
-            {
-                type = "Bus";
-            }
 
-            string bus = type +"["+ (pb.channel-1) + "]";
+            string bus = _modeString +"["+ (pb.channel-1) + "]";
             float f = (pb.pitch/16380.0f*72.0f)-60.0f;
             SetParam(bus + ".Gain", f);
 
@@ -184,44 +177,31 @@ namespace VoiceTouch
         {
             if (n.note <= 7) // Reset fader
             {
-                if (_mode == 0)
-                {
-                    string strip = "Strip[" + n.note + "]";
-                    SetParam(strip + ".Gain", 0f);
-                }
-                else if (_mode == 1)
-                {
-                    string bus = "Bus[" + n.note + "]";
-                    SetParam(bus + ".Gain", 0f);
-                }
+                string strip = _modeString + "[" + n.note + "]";
+                SetParam(strip + ".Gain", 0f);
             }
             else if (n.note >= 16 && n.note <= 23) // Mute buttons
             {
                 UpdateMute();
-                if (_mode == 0)
-                {
-                    string strip = "Strip[" + (n.note - 16) + "]";
-                    SetParam(strip + ".Mute", _stripMute[n.note - 16] ? 0f : 1f);
-                }
-                else if (_mode == 1)
-                {
-                    string bus = "Bus[" + (n.note - 16) + "]";
-                    SetParam(bus + ".Mute", _busMute[n.note - 16] ? 0f : 1f);
-                }
+                
+                string strip = _modeString + "[" + (n.note - 16) + "]";
+                
+                SetParam(strip + ".Mute", _mute[n.note - 16 + _mode * ChannelCount] ? 0f : 1f);
+                
                 VoiceMeeter.Remote.IsParametersDirty();
             }
-            else if (n.note == 63) // Input view mode
+            else if (n.note == ButtonInputs) // Input view mode
             {
                 _mode = 0;
-                ButtonLight(63, true);
-                ButtonLight(67, false);
+                ButtonLight(ButtonInputs, true);
+                ButtonLight(ButtonBuses, false);
                 ChangeMode();
             }
-            else if (n.note == 67) // Bus view mode
+            else if (n.note == ButtonBuses) // Bus view mode
             {
                 _mode = 1;
-                ButtonLight(67, true);
-                ButtonLight(63, false);
+                ButtonLight(ButtonBuses, true);
+                ButtonLight(ButtonInputs, false);
                 ChangeMode();
             }
         }
@@ -229,37 +209,18 @@ namespace VoiceTouch
         void UpdateMute()
         {
             VoiceMeeter.Remote.IsParametersDirty();
-
-            if (_mode == 0)
+            
+            for (int i = 0; i < ChannelCount; i++)
             {
-                for (int i = 0; i < ChannelCount; i++)
+                string s = _modeString + "[" + i + "]";
+                float f = GetParam(s + ".Mute");
+                if (f == 1f)
                 {
-                    string s = "Strip[" + i + "]";
-                    float f = GetParam(s + ".Mute");
-                    if (f == 1f)
-                    {
-                        _stripMute[i] = true;
-                    }
-                    else
-                    {
-                        _stripMute[i] = false;
-                    }
+                    _mute[i + _mode * ChannelCount] = true;
                 }
-            }
-            else if (_mode == 1)
-            {
-                for (int i = 0; i < ChannelCount; i++)
+                else
                 {
-                    string s = "Bus[" + i + "]";
-                    float f = GetParam(s + ".Mute");
-                    if (f == 1f)
-                    {
-                        _busMute[i] = true;
-                    }
-                    else
-                    {
-                        _busMute[i] = false;
-                    }
+                    _mute[i + _mode * ChannelCount] = false;
                 }
             }
         }
@@ -267,20 +228,12 @@ namespace VoiceTouch
         void UpdateMuteButtons()
         {
             UpdateMute();
-            if (_mode == 0)
+
+            for (int i = 0; i < ChannelCount; i++)
             {
-                for (int i = 0; i < ChannelCount; i++)
-                {
-                    ButtonLight(i+16, _stripMute[i]);
-                }
+                ButtonLight(i+16, _mute[i + _mode * ChannelCount]);
             }
-            else if (_mode == 1)
-            {
-                for (int i = 0; i < ChannelCount; i++)
-                {
-                    ButtonLight(i+16, _busMute[i]);
-                }
-            }
+
         }
         void Sync()
         {
@@ -290,19 +243,9 @@ namespace VoiceTouch
         
         void SyncFader()
         {
-            string type = null;
-            if (_mode == 0)
-            {
-                type = "Strip";
-            }
-            else if (_mode == 1)
-            {
-                type = "Bus";
-            }
-
             for (int i = 0; i < ChannelCount; i++)
             {
-                float f = GetParam(type +"[" + i + "]" + ".Gain");
+                float f = GetParam(_modeString +"[" + i + "]" + ".Gain");
                 int f1 = Convert.ToInt16((f + 60.0f) * 16380.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 _midiOut.Send(fader.GetAsShortMessage());
@@ -334,12 +277,15 @@ namespace VoiceTouch
             {
                 DisplayTexts(new[] {"INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT", "INPUT"}, 0);
                 DisplayTexts(new[] {"1", "2", "3", "4", "5", "VINPUT", "AUX1", "VAIO3"}, 1);
+                _modeString = "Strip";
             }
             else if (_mode == 1) // Bus mode
             {
                 DisplayTexts(new[] {"BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS", "BUS"}, 0);
                 DisplayTexts(new[] {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3"}, 1);
+                _modeString = "Bus";
             }
+            Sync();
         }
         
 
