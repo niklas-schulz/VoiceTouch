@@ -10,8 +10,8 @@ namespace VoiceTouch
 {
     public partial class VoiceTouch : Form
     {
-        MidiIn _midiIn;
-        MidiOut _midiOut;
+        private MidiIn _midiIn;
+        private MidiOut _midiOut;
 
         bool[] _busMute = new bool[8];
         bool[] _stripMute = new bool[8];
@@ -51,7 +51,7 @@ namespace VoiceTouch
         {
             if (comboBoxMidiInDevices.Items.Count == 0)
             {
-                MessageBox.Show("No MIDI input devices available");
+                progressLog1.LogMessage(Color.Red, "No MIDI input devices found");
                 return;
             }
             if (_midiIn != null)
@@ -61,23 +61,20 @@ namespace VoiceTouch
                 _midiIn.ErrorReceived -= midiIn_ErrorReceived;
                 _midiIn = null;
             }
-            if (_midiIn == null)
-            {
-                _midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
-                _midiIn.MessageReceived += midiIn_MessageReceived;
-                _midiIn.ErrorReceived += midiIn_ErrorReceived;
-            }
+
+            _midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
+            _midiIn.MessageReceived += midiIn_MessageReceived; 
+            _midiIn.ErrorReceived += midiIn_ErrorReceived;
+
             _midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
             _midiIn.Start();
             comboBoxMidiInDevices.Enabled = false;
             
             var parameters = new Voicemeeter.Parameters();
             parameters.Subscribe(x => Sync());
-                
-            SetDisplayText("123456789", 0);
+            
             SetDisplayColor(_displayColors);
             UpdateMuteButtons();
-            //EnableMeeters();
             Meters();
             ButtonLight(63, true);
             ButtonLight(67, false);
@@ -312,16 +309,6 @@ namespace VoiceTouch
             }
             
         }
-/*
-        void EnableMeeters()
-        {
-            byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x21, 1, 0xF7 };
-            _midiOut.SendBuffer(sysex);
-            for (int i = 0; i < ChannelCount; i++)
-            {
-                sysex = new byte[]{ 0xF0, 0x00, 0x00, 0x66, 0x14, 0x20, (byte)(i + 1), 3, 0xF7 };
-            }
-        }*/
 
         void SetMeters()
         {
