@@ -38,6 +38,7 @@
             this.comboBoxVirtualColor = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.checkBoxExtender = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // comboBoxMidiInDevices
@@ -130,11 +131,21 @@
             this.label4.TabIndex = 9;
             this.label4.Text = "Physical Color";
             // 
+            // checkBoxExtender
+            // 
+            this.checkBoxExtender.Location = new System.Drawing.Point(106, 142);
+            this.checkBoxExtender.Name = "checkBoxExtender";
+            this.checkBoxExtender.Size = new System.Drawing.Size(137, 34);
+            this.checkBoxExtender.TabIndex = 11;
+            this.checkBoxExtender.Text = "Standalone extender";
+            this.checkBoxExtender.UseVisualStyleBackColor = true;
+            // 
             // VoiceTouch
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.checkBoxExtender);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.comboBoxVirtualColor);
@@ -150,6 +161,8 @@
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.CheckBox checkBoxExtender;
 
         private System.Windows.Forms.ComboBox comboBoxPhysicalColor;
         private System.Windows.Forms.ComboBox comboBoxVirtualColor;

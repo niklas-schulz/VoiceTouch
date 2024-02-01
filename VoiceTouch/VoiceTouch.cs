@@ -25,10 +25,11 @@ namespace VoiceTouch
         private const int ChannelInputOffset = 2;
         private const int ChannelOutputOffset = 8;
 
-        private const int ButtonBuses = 67;
-        private const int ButtonInputs = 63;
+        private int _buttonBuses = 67;
+        private int _buttonInputs = 63;
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
+        private byte _productId = 0x14;
         
         public VoiceTouch()
         {
@@ -87,11 +88,19 @@ namespace VoiceTouch
             comboBoxPhysicalColor.Enabled = false;
             comboBoxVirtualColor.Enabled = false;
             
+            checkBoxExtender.Enabled = false;
+            if (checkBoxExtender.Checked)
+            {
+                _productId = 0x15;
+                _buttonInputs = 30;
+                _buttonBuses = 31;
+            }
+            
             UpdateColors();
             UpdateMuteButtons();
             Meters();
-            ButtonLight(ButtonInputs, true);
-            ButtonLight(ButtonBuses, false);
+            ButtonLight(_buttonInputs, true);
+            ButtonLight(_buttonBuses, false);
             ChangeMode();
         }
         
@@ -145,7 +154,7 @@ namespace VoiceTouch
         {
             byte lastMsgLen = 0x37;
             byte[] messageBytes = Encoding.ASCII.GetBytes(message);
-            byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x12, 0x00 };
+            byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, _productId, 0x12, 0x00 };
             
             sysex[6] = (byte)((lastMsgLen + 1) * row);
             
@@ -157,7 +166,7 @@ namespace VoiceTouch
         
         void SetDisplayColor(byte[] color)
         {
-            byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x72};
+            byte[] sysex = new byte[] { 0xF0, 0x00, 0x00, 0x66, _productId, 0x72};
             _midiOut.SendBuffer(sysex);
             _midiOut.SendBuffer(color);
             _midiOut.SendBuffer(new byte[] { 0xF7 });
@@ -200,18 +209,18 @@ namespace VoiceTouch
                 
                 VoiceMeeter.Remote.IsParametersDirty();
             }
-            else if (n.note == ButtonInputs) // Input view mode
+            else if (n.note == _buttonInputs) // Input view mode
             {
                 _mode = 0;
-                ButtonLight(ButtonInputs, true);
-                ButtonLight(ButtonBuses, false);
+                ButtonLight(_buttonInputs, true);
+                ButtonLight(_buttonBuses, false);
                 ChangeMode();
             }
-            else if (n.note == ButtonBuses) // Bus view mode
+            else if (n.note == _buttonBuses) // Bus view mode
             {
                 _mode = 1;
-                ButtonLight(ButtonBuses, true);
-                ButtonLight(ButtonInputs, false);
+                ButtonLight(_buttonBuses, true);
+                ButtonLight(_buttonInputs, false);
                 ChangeMode();
             }
         }
@@ -341,6 +350,5 @@ namespace VoiceTouch
         {
             StartMonitoring();
         }
-
     }
 }
