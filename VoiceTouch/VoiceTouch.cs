@@ -27,9 +27,14 @@ namespace VoiceTouch
 
         private int _buttonBuses = 67;
         private int _buttonInputs = 63;
+        private int _buttonMutes = 16;
+        private int _buttonFaderReset = 0;
+        private float _faderOffset = 4.0f;
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
         private byte _productId = 0x14;
+        // 0 = Full size, 1 = Extender, 2 = Compact
+        private string _deviceType = "full";
         
         public VoiceTouch()
         {
@@ -42,6 +47,11 @@ namespace VoiceTouch
             }
             comboBoxPhysicalColor.SelectedIndex = 6;
             comboBoxVirtualColor.SelectedIndex = 2;
+            
+            comboBoxDevice.Items.Add("full");
+            comboBoxDevice.Items.Add("extender");
+            comboBoxDevice.Items.Add("compact");
+            comboBoxDevice.SelectedIndex = 0;
 
             for (int device = 0; device < MidiIn.NumberOfDevices; device++)
                 comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
@@ -87,14 +97,9 @@ namespace VoiceTouch
             
             comboBoxPhysicalColor.Enabled = false;
             comboBoxVirtualColor.Enabled = false;
+            comboBoxDevice.Enabled = false;
             
-            checkBoxExtender.Enabled = false;
-            if (checkBoxExtender.Checked)
-            {
-                _productId = 0x15;
-                _buttonInputs = 30;
-                _buttonBuses = 31;
-            }
+            DeviceType();
             
             UpdateColors();
             UpdateMuteButtons();
@@ -110,6 +115,31 @@ namespace VoiceTouch
             {
                 await Task.Delay(50);
                 SetMeters();
+            }
+        }
+
+        void DeviceType()
+        {
+            _deviceType = comboBoxDevice.SelectedItem.ToString();
+
+            switch (_deviceType)
+            {
+                case "full":
+                    _productId = 0x14;
+                    _buttonBuses = 67;
+                    _buttonInputs = 63;
+                    break;
+                case "extender":
+                    _productId = 0x15;
+                    _buttonInputs = 30;
+                    _buttonBuses = 31;
+                    break;
+                case "compact":
+                    _buttonInputs = 84;
+                    _buttonBuses = 85;
+                    _buttonMutes = 24;
+                    _buttonFaderReset = 32;
+                    break;
             }
         }
 
@@ -147,6 +177,7 @@ namespace VoiceTouch
                 n.note = noteOnValue;
                 n.vel = noteOn.Velocity;
                 noteOnHandler(n);
+                progressLog1.LogMessage(Color.Green, String.Format("NoteOn: {0} {1}", n.note, n.vel));
             }
         }
 
@@ -187,19 +218,19 @@ namespace VoiceTouch
                 return;
 
             string bus = _modeString +"["+ (pb.channel-1) + "]";
-            float f = (pb.pitch/16380.0f*72.0f)-60.0f;
+            float f = (pb.pitch/16380.0f*72.0f)-60.0f + _faderOffset;
             SetParam(bus + ".Gain", f);
 
             VoiceMeeter.Remote.IsParametersDirty();
         }
         void noteOnHandler(Note n)
         {
-            if (n.note <= 7) // Reset fader
+            if (n.note >= _buttonFaderReset && n.note <= _buttonFaderReset + ChannelCount) // Reset fader
             {
                 string strip = _modeString + "[" + n.note + "]";
                 SetParam(strip + ".Gain", 0f);
             }
-            else if (n.note >= 16 && n.note <= 23) // Mute buttons
+            else if (n.note >= _buttonMutes && n.note <= _buttonMutes + ChannelCount) // Mute buttons
             {
                 UpdateMute();
                 
@@ -262,7 +293,7 @@ namespace VoiceTouch
             for (int i = 0; i < ChannelCount; i++)
             {
                 float f = GetParam(_modeString +"[" + i + "]" + ".Gain");
-                int f1 = Convert.ToInt16((f + 60.0f) * 16380.0f / 72.0f);
+                int f1 = Convert.ToInt16((f + 60.0f - _faderOffset) * 16380.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 _midiOut.Send(fader.GetAsShortMessage());
             }

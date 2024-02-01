@@ -38,7 +38,8 @@
             this.comboBoxVirtualColor = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
-            this.checkBoxExtender = new System.Windows.Forms.CheckBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.comboBoxDevice = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // comboBoxMidiInDevices
@@ -131,21 +132,30 @@
             this.label4.TabIndex = 9;
             this.label4.Text = "Physical Color";
             // 
-            // checkBoxExtender
+            // label5
             // 
-            this.checkBoxExtender.Location = new System.Drawing.Point(106, 142);
-            this.checkBoxExtender.Name = "checkBoxExtender";
-            this.checkBoxExtender.Size = new System.Drawing.Size(137, 34);
-            this.checkBoxExtender.TabIndex = 11;
-            this.checkBoxExtender.Text = "Standalone extender";
-            this.checkBoxExtender.UseVisualStyleBackColor = true;
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(37, 163);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(64, 13);
+            this.label5.TabIndex = 12;
+            this.label5.Text = "Device type";
+            // 
+            // comboBoxDevice
+            // 
+            this.comboBoxDevice.FormattingEnabled = true;
+            this.comboBoxDevice.Location = new System.Drawing.Point(106, 160);
+            this.comboBoxDevice.Name = "comboBoxDevice";
+            this.comboBoxDevice.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxDevice.TabIndex = 11;
             // 
             // VoiceTouch
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.checkBoxExtender);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.comboBoxDevice);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.comboBoxVirtualColor);
@@ -162,7 +172,8 @@
             this.PerformLayout();
         }
 
-        private System.Windows.Forms.CheckBox checkBoxExtender;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ComboBox comboBoxDevice;
 
         private System.Windows.Forms.ComboBox comboBoxPhysicalColor;
         private System.Windows.Forms.ComboBox comboBoxVirtualColor;
