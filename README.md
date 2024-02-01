@@ -5,7 +5,7 @@ Behringer X-Touch integration with VoiceMeeter Potato
 
 Currently only simple features are implemented
 
-Support for the Full size, Extender and Compact versions
+Support for the Full size, Extender and Compact(only in MC mode) versions
 
 
 For extender standalone mode channel 7 and 8 select changes between inputs and buses
