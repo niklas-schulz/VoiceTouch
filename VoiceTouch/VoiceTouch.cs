@@ -29,7 +29,7 @@ namespace VoiceTouch
         private int _buttonInputs = 63;
         private int _buttonMutes = 16;
         private int _buttonFaderReset = 0;
-        private float _faderOffset = 4.0f;
+        private int _buttonMasterTouch = 112;
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
         private byte _productId = 0x14;
@@ -218,7 +218,7 @@ namespace VoiceTouch
                 return;
 
             string bus = _modeString +"["+ (pb.channel-1) + "]";
-            float f = (pb.pitch/16380.0f*72.0f)-60.0f + _faderOffset;
+            float f = (pb.pitch/15500.0f*72.0f)-60.0f;
             SetParam(bus + ".Gain", f);
 
             VoiceMeeter.Remote.IsParametersDirty();
@@ -293,7 +293,7 @@ namespace VoiceTouch
             for (int i = 0; i < ChannelCount; i++)
             {
                 float f = GetParam(_modeString +"[" + i + "]" + ".Gain");
-                int f1 = Convert.ToInt16((f + 60.0f - _faderOffset) * 16380.0f / 72.0f);
+                int f1 = Convert.ToInt16((f + 60.0f) * 15500.0f / 72.0f);
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 _midiOut.Send(fader.GetAsShortMessage());
             }
