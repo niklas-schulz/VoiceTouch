@@ -30,6 +30,9 @@ namespace VoiceTouch
         private int _buttonMutes = 16;
         private int _buttonFaderReset = 0;
         private int _buttonMasterTouch = 112;
+        private float _masterFader = 0f;
+        
+        private float[] _faderStore = new float[ChannelCount];
 
         private byte[] _displayColors = new byte[] {Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Cyan, Colors.Green, Colors.Green, Colors.Green};
         private byte _productId = 0x14;
@@ -214,7 +217,12 @@ namespace VoiceTouch
 
         void Fader(PitchBend pb)
         {
-            if (pb.channel > 8)
+            if (pb.channel == 9)
+            {
+                Master(pb);
+                return;
+            }
+            if (pb.channel > 9)    
                 return;
 
             string bus = _modeString +"["+ (pb.channel-1) + "]";
@@ -222,6 +230,19 @@ namespace VoiceTouch
             SetParam(bus + ".Gain", f);
 
             VoiceMeeter.Remote.IsParametersDirty();
+        }
+
+        void Master(PitchBend pb)
+        {
+            _masterFader = (pb.pitch/15500.0f*72.0f)-60.0f;
+            progressLog1.LogMessage(Color.Green, String.Format("Master: {0}", _masterFader));
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                string bus = "Bus" +"["+ i + "]";
+                float f = _faderStore[i] + _masterFader;
+                f = Clamp(f, -60f, 12f);
+                SetParam(bus + ".Gain", f);
+            }
         }
         void noteOnHandler(Note n)
         {
@@ -253,6 +274,13 @@ namespace VoiceTouch
                 ButtonLight(_buttonBuses, true);
                 ButtonLight(_buttonInputs, false);
                 ChangeMode();
+            }
+            else if (n.note == _buttonMasterTouch && _masterFader >= -2f && _masterFader <= 2f)
+            {
+                for (int i = 0; i < ChannelCount; i++)
+                {
+                    _faderStore[i] = GetParam("Bus" + "[" + i + "]" + ".Gain");
+                }
             }
         }
 
@@ -297,7 +325,9 @@ namespace VoiceTouch
                 MidiEvent fader = new PitchWheelChangeEvent(0, i + 1, f1);
                 _midiOut.Send(fader.GetAsShortMessage());
             }
-            
+            int mf = Convert.ToInt16((_masterFader + 60.0f) * 15500.0f / 72.0f);
+            MidiEvent masterFader = new PitchWheelChangeEvent(0, 9, mf);
+            _midiOut.Send(masterFader.GetAsShortMessage());
         }
 
         void SetMeters()
