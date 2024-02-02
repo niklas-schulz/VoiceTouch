@@ -140,8 +140,6 @@ namespace VoiceTouch
                 case "compact":
                     _buttonInputs = 84;
                     _buttonBuses = 85;
-                    _buttonMutes = 24;
-                    _buttonFaderReset = 32;
                     break;
             }
         }
