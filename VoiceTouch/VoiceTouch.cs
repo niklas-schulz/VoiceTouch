@@ -306,7 +306,7 @@ namespace VoiceTouch
             UpdateMute();
 
             for (int i = 0; i < ChannelCount; i++)
-                ButtonLight(i+16, _mute[i + _mode * ChannelCount]);
+                ButtonLight(i + _buttonMutes, _mute[i + _mode * ChannelCount]);
         }
         void Sync()
         {
