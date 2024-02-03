@@ -10,6 +10,8 @@ Support for the Full size, Extender and Compact(only in MC mode) versions
 
 For extender standalone mode channel 7 and 8 select changes between inputs and buses
 
+Config.json can be edited to change the keymap the number represents the first button in the row if it's a multichannel button type, the button numbers can be seen in the log.
+
 Any questions? write to me on discord: "viwas"
 
 ## Installation
