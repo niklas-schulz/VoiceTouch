@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.Json;
+using System.Threading;
 using static VoiceTouch.Utils;
 
 namespace VoiceTouch
@@ -87,7 +88,8 @@ namespace VoiceTouch
                 SaveConfig();
             }
 
-
+            Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
         }
 
         private void StartMonitoring()
@@ -283,18 +285,18 @@ namespace VoiceTouch
         }
         void noteOnHandler(Note n)
         {
-            if (n.note >= _config.ButtonFaderReset && n.note <= _config.ButtonFaderReset + ChannelCount) // Reset fader
+            if (n.note >= _config.ButtonFaderReset && n.note < _config.ButtonFaderReset + ChannelCount) // Reset fader
             {
                 string strip = _modeString + "[" + n.note + "]";
+
                 SetParam(strip + ".Gain", 0f);
             }
-            else if (n.note >= _config.ButtonMutes && n.note <= _config.ButtonMutes + ChannelCount) // Mute buttons
+            else if (n.note >= _config.ButtonMutes && n.note < _config.ButtonMutes + ChannelCount) // Mute buttons
             {
                 UpdateMute();
                 
-                string strip = _modeString + "[" + (n.note - 16) + "]";
-                
-                SetParam(strip + ".Mute", _mute[n.note - 16 + _mode * ChannelCount] ? 0f : 1f);
+                string strip = _modeString + "[" + (n.note - _config.ButtonMutes) + "]";
+                SetParam(strip + ".Mute", _mute[n.note - _config.ButtonMutes + _mode * ChannelCount] ? 0f : 1f);
                 
                 VoiceMeeter.Remote.IsParametersDirty();
             }
@@ -447,6 +449,18 @@ namespace VoiceTouch
         private void buttonMonitor_Click(object sender, EventArgs e)
         {
             StartMonitoring();
+        }
+        
+        static void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            // Write excepection to file log.txt
+            File.AppendAllText("log.txt", e.Exception.Message + e.Exception.InnerException);
+        }
+
+        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            // Write excepection to file log.txt
+            File.AppendAllText("log.txt", e.ExceptionObject.ToString());
         }
     }
 }
