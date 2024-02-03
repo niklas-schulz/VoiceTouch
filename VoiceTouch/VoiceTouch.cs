@@ -82,7 +82,7 @@ namespace VoiceTouch
                 progressLog1.LogMessage(Color.Red, "Config not found, using default");
                 _config = new Config()
                 {
-                    ButtonBuses = 67, ButtonInputs = 63, ButtonMutes = 16, ButtonFaderReset = 48, ButtonMasterTouch = 49
+                    ButtonBuses = 67, ButtonInputs = 63, ButtonMutes = 16, ButtonFaderReset = 0, ButtonMasterTouch = 112
                 };
                 SaveConfig();
             }
