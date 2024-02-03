@@ -1,9 +1,11 @@
 ﻿using NAudio.Midi;
 using System;
 using System.Drawing;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.Json;
 using static VoiceTouch.Utils;
 
 namespace VoiceTouch
@@ -25,11 +27,16 @@ namespace VoiceTouch
         private const int ChannelInputOffset = 2;
         private const int ChannelOutputOffset = 8;
 
-        private int _buttonBuses = 67;
-        private int _buttonInputs = 63;
-        private int _buttonMutes = 16;
-        private int _buttonFaderReset = 0;
-        private int _buttonMasterTouch = 112;
+        public class Config
+        {
+            public int ButtonBuses { get; set; }
+            public int ButtonInputs { get; set; }
+            public int ButtonMutes { get; set; }
+            public int ButtonFaderReset{ get; set; }
+            public int ButtonMasterTouch { get; set; }
+        }
+        
+
         private float _masterFader = 0f;
         
         private float[] _faderStore = new float[ChannelCount];
@@ -38,7 +45,7 @@ namespace VoiceTouch
         private byte _productId = 0x14;
         // 0 = Full size, 1 = Extender, 2 = Compact
         private string _deviceType = "full";
-        
+        private Config _config = new Config();
         public VoiceTouch()
         {
             InitializeComponent();
@@ -67,6 +74,20 @@ namespace VoiceTouch
                 comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
 
             VoiceMeeter.Remote.Initialize(Voicemeeter.RunVoicemeeterParam.VoicemeeterPotato);
+            
+            if (LoadConfig())
+                progressLog1.LogMessage(Color.Green, "Config loaded");
+            else
+            {
+                progressLog1.LogMessage(Color.Red, "Config not found, using default");
+                _config = new Config()
+                {
+                    ButtonBuses = 67, ButtonInputs = 63, ButtonMutes = 16, ButtonFaderReset = 48, ButtonMasterTouch = 49
+                };
+                SaveConfig();
+            }
+
+
         }
 
         private void StartMonitoring()
@@ -107,9 +128,27 @@ namespace VoiceTouch
             UpdateColors();
             UpdateMuteButtons();
             Meters();
-            ButtonLight(_buttonInputs, true);
-            ButtonLight(_buttonBuses, false);
+            ButtonLight(_config.ButtonInputs, true);
+            ButtonLight(_config.ButtonBuses, false);
             ChangeMode();
+        }
+        
+        void SaveConfig()
+        {
+            string fileName = "Config.json"; 
+            string jsonString = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(fileName, jsonString);
+        }
+        
+        bool LoadConfig()
+        {
+            string fileName = "Config.json";
+            if (!File.Exists(fileName))
+                return false;
+            
+            string jsonString = File.ReadAllText(fileName);
+            _config = JsonSerializer.Deserialize<Config>(jsonString);
+            return true;
         }
         
         async void Meters()
@@ -129,17 +168,17 @@ namespace VoiceTouch
             {
                 case "full":
                     _productId = 0x14;
-                    _buttonBuses = 67;
-                    _buttonInputs = 63;
+                    _config.ButtonBuses = 67;
+                    _config.ButtonInputs = 63;
                     break;
                 case "extender":
                     _productId = 0x15;
-                    _buttonInputs = 30;
-                    _buttonBuses = 31;
+                    _config.ButtonInputs = 30;
+                    _config.ButtonBuses = 31;
                     break;
                 case "compact":
-                    _buttonInputs = 84;
-                    _buttonBuses = 85;
+                    _config.ButtonInputs = 84;
+                    _config.ButtonBuses = 85;
                     break;
             }
         }
@@ -244,12 +283,12 @@ namespace VoiceTouch
         }
         void noteOnHandler(Note n)
         {
-            if (n.note >= _buttonFaderReset && n.note <= _buttonFaderReset + ChannelCount) // Reset fader
+            if (n.note >= _config.ButtonFaderReset && n.note <= _config.ButtonFaderReset + ChannelCount) // Reset fader
             {
                 string strip = _modeString + "[" + n.note + "]";
                 SetParam(strip + ".Gain", 0f);
             }
-            else if (n.note >= _buttonMutes && n.note <= _buttonMutes + ChannelCount) // Mute buttons
+            else if (n.note >= _config.ButtonMutes && n.note <= _config.ButtonMutes + ChannelCount) // Mute buttons
             {
                 UpdateMute();
                 
@@ -259,21 +298,21 @@ namespace VoiceTouch
                 
                 VoiceMeeter.Remote.IsParametersDirty();
             }
-            else if (n.note == _buttonInputs) // Input view mode
+            else if (n.note == _config.ButtonInputs) // Input view mode
             {
                 _mode = 0;
-                ButtonLight(_buttonInputs, true);
-                ButtonLight(_buttonBuses, false);
+                ButtonLight(_config.ButtonInputs, true);
+                ButtonLight(_config.ButtonBuses, false);
                 ChangeMode();
             }
-            else if (n.note == _buttonBuses) // Bus view mode
+            else if (n.note == _config.ButtonBuses) // Bus view mode
             {
                 _mode = 1;
-                ButtonLight(_buttonBuses, true);
-                ButtonLight(_buttonInputs, false);
+                ButtonLight(_config.ButtonBuses, true);
+                ButtonLight(_config.ButtonInputs, false);
                 ChangeMode();
             }
-            else if (n.note == _buttonMasterTouch && _masterFader >= -2f && _masterFader <= 2f)
+            else if (n.note == _config.ButtonMasterTouch && _masterFader >= -2f && _masterFader <= 2f)
             {
                 for (int i = 0; i < ChannelCount; i++)
                 {
@@ -306,7 +345,7 @@ namespace VoiceTouch
             UpdateMute();
 
             for (int i = 0; i < ChannelCount; i++)
-                ButtonLight(i + _buttonMutes, _mute[i + _mode * ChannelCount]);
+                ButtonLight(i + _config.ButtonMutes, _mute[i + _mode * ChannelCount]);
         }
         void Sync()
         {
